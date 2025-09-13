@@ -1,49 +1,49 @@
-// src/components/tests/TaskQuickActions.test.jsx
-import React from "react";
-import { screen, fireEvent, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { renderWithProviders } from "@/tests/test-utils";
-import TaskQuickActions from "../TaskQuickActions";
-import { updateTaskStatus } from "../../services/api.js";
+import React, { useEffect, useState } from "react";
+import { FormControl, InputLabel, Select, MenuItem, Typography } from "@mui/material";
+import { updateTaskStatus } from "../services/api.js";
+import { statusList, nameFromCode } from "../constants/status.js";
 
-jest.mock("../../services/api.js", () => ({
-  updateTaskStatus: jest.fn().mockResolvedValue({}),
-}));
+export default function TaskQuickActions({ task, boardId, onChanged }) {
+  const [s, setS] = useState(task?.status ?? "ToDo");
+  const [busy, setBusy] = useState(false);
 
-const boardId = "b-1";
+  useEffect(() => {
+    setS(task?.status ? nameFromCode(task?.status) : "ToDo");
+  }, [task?.id, task?.status]);
 
-async function openMenu() {
-  const trigger = screen.getByLabelText(/status/i);
-  fireEvent.mouseDown(trigger);
-  return await screen.findByRole("listbox");
+  async function onChangeStatus(next) {
+    setBusy(true);
+    try {
+      await updateTaskStatus(boardId, task.id, next);
+      setS(next);
+      onChanged?.();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+      <FormControl size="small" sx={{ minWidth: 160 }} disabled={busy}>
+        <InputLabel id={`status-${task.id}`}>Status</InputLabel>
+        <Select
+          labelId={`status-${task.id}`}
+          label="Status"
+          value={s}
+          onChange={(e) => onChangeStatus(e.target.value)}
+        >
+          {statusList.map((x) => (
+            <MenuItem key={x} value={x}>
+              {x}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      {task.deadline && (
+        <Typography variant="caption" sx={{ marginLeft: "auto", color: "text.secondary" }}>
+          Due {task.deadline}
+        </Typography>
+      )}
+    </div>
+  );
 }
-
-describe("TaskQuickActions", () => {
-  test("shows initial status from numeric code", () => {
-    renderWithProviders(<TaskQuickActions task={{ id: "t-1", status: 2 }} boardId={boardId} onChanged={() => {}} />);
-    expect(screen.getByRole("button", { name: /done/i })).toBeInTheDocument();
-  });
-
-  test("change status calls api and onChanged", async () => {
-    const user = userEvent.setup();
-    const onChanged = jest.fn();
-    renderWithProviders(<TaskQuickActions task={{ id: "t-2", status: 0 }} boardId={boardId} onChanged={onChanged} />);
-
-    const listbox = await openMenu();
-    const option = within(listbox).getByText("InProgress");
-    await user.click(option);
-
-    expect(updateTaskStatus).toHaveBeenCalledWith(boardId, "t-2", "InProgress");
-    expect(onChanged).toHaveBeenCalledTimes(1);
-  });
-
-  test("syncs when task prop changes", async () => {
-    const { rerender } = renderWithProviders(
-      <TaskQuickActions task={{ id: "t-3", status: 0 }} boardId={boardId} onChanged={() => {}} />
-    );
-    expect(screen.getByRole("button", { name: /todo/i })).toBeInTheDocument();
-
-    rerender(<TaskQuickActions task={{ id: "t-3", status: 1 }} boardId={boardId} onChanged={() => {}} />);
-    expect(screen.getByRole("button", { name: /inprogress/i })).toBeInTheDocument();
-  });
-});
