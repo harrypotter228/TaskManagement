@@ -1,14 +1,14 @@
 ﻿using FluentAssertions;
 using Moq;
 using TaskManagement.Server.Common.Exceptions;
+using TaskManagement.Server.Contracts.DtoEnums;
 using TaskManagement.Server.Contracts.Dtos;
 using TaskManagement.Server.Contracts.Requests;
 using TaskManagement.Server.Contracts.Responses;
-using TaskManagement.Server.Contracts.DtoEnums;
-using TaskManagement.Server.Domains.Interfaces.Repositories;
-using TaskManagement.Server.Domains.Enums;
-using TaskManagement.Server.Services;
 using TaskManagement.Server.Domains.Entities;
+using TaskManagement.Server.Domains.Enums;
+using TaskManagement.Server.Domains.Interfaces.Repositories;
+using TaskManagement.Server.Services;
 using Xunit;
 
 namespace TaskManagement.Server.Tests.Services;

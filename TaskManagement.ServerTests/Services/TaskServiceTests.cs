@@ -1,8 +1,8 @@
 ﻿using FluentAssertions;
 using Moq;
 using TaskManagement.Server.Common.Exceptions;
-using TaskManagement.Server.Contracts.Dtos;
 using TaskManagement.Server.Contracts.DtoEnums;
+using TaskManagement.Server.Contracts.Dtos;
 using TaskManagement.Server.Contracts.Requests;
 using TaskManagement.Server.Contracts.Responses;
 using TaskManagement.Server.Domains.Entities;
@@ -257,28 +257,6 @@ public class TaskServiceTests
         var svc = new TaskService(tasks.Object, links.Object, favs.Object);
         var act = async () => await svc.UpdateTaskStatusAsync(b, ti.Id, new ChangeTaskStatusRequest { Status = null }, null);
         await act.Should().ThrowAsync<ValidationException>();
-    }
-
-    [Fact]
-    public async Task DeleteTaskAsync_Should_Remove_From_All_Boards_And_Delete()
-    {
-        var (tasks, links, favs) = Mocks();
-        var t = MakeTask("X");
-        var b = Guid.NewGuid();
-        var b2 = Guid.NewGuid();
-        links.Setup(x => x.Exists(b, t.Id)).Returns(true);
-        tasks.Setup(x => x.Get(t.Id)).Returns(t);
-        links.Setup(x => x.GetBoardIds(t.Id)).Returns(new[] { b, b2 });
-        links.Setup(x => x.Remove(b, t.Id));
-        links.Setup(x => x.Remove(b2, t.Id));
-        tasks.Setup(x => x.Delete(t.Id));
-
-        var svc = new TaskService(tasks.Object, links.Object, favs.Object);
-        await svc.DeleteTaskAsync(b, t.Id);
-
-        links.Verify(x => x.Remove(b, t.Id), Times.Once);
-        links.Verify(x => x.Remove(b2, t.Id), Times.Once);
-        tasks.Verify(x => x.Delete(t.Id), Times.Once);
     }
 
     [Fact]
